@@ -3,6 +3,13 @@ from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+import time
+
+
+import datetime
+
+SUPERUSER_LIFETIME = datetime.timedelta(minutes=30)
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -11,8 +18,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(cls, user):
         token = super(MyTokenObtainPairSerializer, cls).get_token(user)
 
-        # Add custom claims
-        token['email'] = user.email
         return token
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -55,6 +60,8 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class UserDetailSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField(read_only=True)
+    groups = serializers.SerializerMethodField()
+
 
     class Meta:
         model = User
@@ -69,7 +76,11 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "is_staff",
             "is_active",
             "date_joined",
+            "groups",
         ]
 
     def get_id(self, obj):
         return obj.id
+
+    def get_groups(self, obj):
+        return [group.name for group in obj.groups.all()]
