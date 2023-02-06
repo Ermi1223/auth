@@ -3,6 +3,9 @@ from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from .models import Profile
+import base64
+from django.conf import settings
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
@@ -50,9 +53,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+class ProfilePictureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['image']
+
 class UserDetailSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField(read_only=True)
     groups = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
 
 
     class Meta:
@@ -69,6 +78,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "is_active",
             "date_joined",
             "groups",
+            "image_url"
         ]
 
     def get_id(self, obj):
@@ -76,3 +86,11 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     def get_groups(self, obj):
         return [group.name for group in obj.groups.all()]
+
+    def get_image_url(self, obj):
+        try:
+            profile = obj.profile
+            image_url = str(profile.image)
+            return settings.MEDIA_URL + image_url
+        except:
+            return None
