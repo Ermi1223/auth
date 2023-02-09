@@ -6,6 +6,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import Profile
 import base64
 from django.conf import settings
+from django.contrib.auth.models import Group
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
@@ -48,6 +49,11 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         
         user.set_password(validated_data['password'])
+        user.save()
+
+        # Add the user to the "startup" permission group
+        group, created = Group.objects.get_or_create(name='startup')
+        user.groups.add(group)
         user.save()
 
         return user
