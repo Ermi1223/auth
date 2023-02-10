@@ -11,3 +11,11 @@ class Profile(models.Model):
 
     class Meta:
         app_label = 'auth'
+
+
+class UserActivation(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    activation_token = models.CharField(max_length=100, unique=True)
+    
+    class Meta:
+        app_label = 'auth'

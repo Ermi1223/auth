@@ -1,14 +1,14 @@
-from .serializers import MyTokenObtainPairSerializer
+from ..serializers import MyTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.models import User
-from .models import Profile
-from .serializers import RegisterSerializer
+from ..models import Profile
+from ..serializers import RegisterSerializer
 from rest_framework import generics
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 
 
-from .serializers import (
+from ..serializers import (
     RegisterSerializer,
     UserDetailSerializer,
     ProfilePictureSerializer,
@@ -29,12 +29,6 @@ from rest_framework.generics import (
 )
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
-# def get_profile_picture(request, id):
-#     user = get_object_or_404(User, id=id)
-#     profile = user.profile
-#     return JsonResponse({'profile_picture': profile.image.url})
-
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
@@ -57,20 +51,6 @@ class UpdateProfilePictureAPIView(UpdateAPIView):
             self.get_object().save()
         return super().update(request, *args, **kwargs)
 
-
-# def upload_profile_picture(request, id):
-#     user = get_object_or_404(User, id=id)
-#     try:
-#         profile = user.profile
-#     except Profile.DoesNotExist:
-#         return JsonResponse({'error': 'Profile does not exist for this user'})
-#     if request.method == 'POST':
-#         image = request.FILES.get('image')
-#         if not image:
-#             return HttpResponseBadRequest('Image not provided')
-#         profile.image = image
-#         profile.save()
-#         return JsonResponse({'message': 'Profile picture updated successfully'})
 
 class MyObtainTokenPairView(TokenObtainPairView):
     permission_classes = (AllowAny,)

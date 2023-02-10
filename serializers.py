@@ -3,10 +3,21 @@ from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import Profile
+from .models import Profile, UserActivation
 import base64
+from uuid import uuid4
 from django.conf import settings
 from django.contrib.auth.models import Group
+from .utils import send_activation_email, generate_token
+from django.contrib.auth.hashers import make_password
+
+class UserActivationSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+
+    class Meta:
+        model = UserActivation
+        fields = ('user', 'activation_token')
+
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
@@ -25,9 +36,11 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
 
+    activation_token = serializers.CharField(read_only=True)
+
     class Meta:
         model = User
-        fields = ('username', 'password', 'password2', 'email', 'first_name', 'last_name')
+        fields = ('username', 'password', 'password2', 'email', 'first_name', 'last_name', 'activation_token')
         extra_kwargs = {
             'first_name': {'required': True},
             'last_name': {'required': True}
@@ -49,12 +62,26 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         
         user.set_password(validated_data['password'])
+        
+        activation_token = uuid4().hex
+        
+        user.is_active = False
         user.save()
+
+        user_activation = UserActivation(user=user, activation_token=activation_token)
+        user_activation.save()
+        
 
         # Add the user to the "startup" permission group
         group, created = Group.objects.get_or_create(name='startup')
         user.groups.add(group)
         user.save()
+
+        try:
+            # send the activation email to the user
+            send_activation_email(user.email, activation_token)
+        except:
+            return user
 
         return user
 
